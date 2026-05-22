@@ -1,6 +1,13 @@
 import type { Express } from "express";
 import { ENV } from "./env";
 
+// Import memory storage from storage module
+let memoryStorage: Map<string, { data: Buffer; contentType: string }>;
+
+export function setMemoryStorage(storage: Map<string, { data: Buffer; contentType: string }>) {
+  memoryStorage = storage;
+}
+
 export function registerStorageProxy(app: Express) {
   app.get("/manus-storage/*", async (req, res) => {
     const key = (req.params as Record<string, string>)[0];
@@ -9,40 +16,54 @@ export function registerStorageProxy(app: Express) {
       return;
     }
 
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
-    }
+    if (ENV.forgeApiUrl && ENV.forgeApiKey) {
+      // Use Forge API if configured
+      try {
+        const forgeUrl = new URL(
+          "v1/storage/presign/get",
+          ENV.forgeApiUrl.replace(/\/+$/, "") + "/",
+        );
+        forgeUrl.searchParams.set("path", key);
 
-    try {
-      const forgeUrl = new URL(
-        "v1/storage/presign/get",
-        ENV.forgeApiUrl.replace(/\/+$/, "") + "/",
-      );
-      forgeUrl.searchParams.set("path", key);
+        const forgeResp = await fetch(forgeUrl, {
+          headers: { Authorization: `Bearer ${ENV.forgeApiKey}` },
+        });
 
-      const forgeResp = await fetch(forgeUrl, {
-        headers: { Authorization: `Bearer ${ENV.forgeApiKey}` },
-      });
+        if (!forgeResp.ok) {
+          const body = await forgeResp.text().catch(() => "");
+          console.error(`[StorageProxy] forge error: ${forgeResp.status} ${body}`);
+          res.status(502).send("Storage backend error");
+          return;
+        }
 
-      if (!forgeResp.ok) {
-        const body = await forgeResp.text().catch(() => "");
-        console.error(`[StorageProxy] forge error: ${forgeResp.status} ${body}`);
-        res.status(502).send("Storage backend error");
+        const { url } = (await forgeResp.json()) as { url: string };
+        if (!url) {
+          res.status(502).send("Empty signed URL from backend");
+          return;
+        }
+
+        res.set("Cache-Control", "no-store");
+        res.redirect(307, url);
+      } catch (err) {
+        console.error("[StorageProxy] failed:", err);
+        res.status(502).send("Storage proxy error");
+      }
+    } else {
+      // Fallback: serve from in-memory storage
+      if (!memoryStorage || !memoryStorage.has(key)) {
+        res.status(404).send("Storage item not found");
         return;
       }
 
-      const { url } = (await forgeResp.json()) as { url: string };
-      if (!url) {
-        res.status(502).send("Empty signed URL from backend");
+      const item = memoryStorage.get(key);
+      if (!item) {
+        res.status(404).send("Storage item not found");
         return;
       }
 
+      res.set("Content-Type", item.contentType);
       res.set("Cache-Control", "no-store");
-      res.redirect(307, url);
-    } catch (err) {
-      console.error("[StorageProxy] failed:", err);
-      res.status(502).send("Storage proxy error");
+      res.send(item.data);
     }
   });
 }

@@ -18,14 +18,12 @@ type MapsConfig = {
   apiKey: string;
 };
 
-function getMapsConfig(): MapsConfig {
+function getMapsConfig(): MapsConfig | null {
   const baseUrl = ENV.forgeApiUrl;
   const apiKey = ENV.forgeApiKey;
 
   if (!baseUrl || !apiKey) {
-    throw new Error(
-      "Google Maps proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
-    );
+    return null;
   }
 
   return {
@@ -56,7 +54,17 @@ export async function makeRequest<T = unknown>(
   params: Record<string, unknown> = {},
   options: RequestOptions = {}
 ): Promise<T> {
-  const { baseUrl, apiKey } = getMapsConfig();
+  const config = getMapsConfig();
+
+  if (!config) {
+    // Fallback: return empty response when Maps API is not configured
+    console.warn(
+      `[Maps] Google Maps proxy not configured for ${endpoint}, returning empty response`
+    );
+    return { results: [], status: "ZERO_RESULTS" } as unknown as T;
+  }
+
+  const { baseUrl, apiKey } = config;
 
   // Construct full URL: baseUrl + /v1/maps/proxy + endpoint
   const url = new URL(`${baseUrl}/v1/maps/proxy${endpoint}`);
