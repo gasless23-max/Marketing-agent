@@ -86,24 +86,32 @@ declare global {
   }
 }
 
-const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY;
+const API_KEY = import.meta.env.VITE_FRONTEND_FORGE_API_KEY || "";
 const FORGE_BASE_URL =
   import.meta.env.VITE_FRONTEND_FORGE_API_URL ||
   "https://forge.butterfly-effect.dev";
 const MAPS_PROXY_URL = `${FORGE_BASE_URL}/v1/maps/proxy`;
 
 function loadMapScript() {
-  return new Promise(resolve => {
+  return new Promise<void>(resolve => {
+    // If no API key is configured, skip loading Google Maps and use fallback
+    if (!API_KEY) {
+      console.warn("[Map] Google Maps API key not configured, using fallback");
+      resolve();
+      return;
+    }
+
     const script = document.createElement("script");
     script.src = `${MAPS_PROXY_URL}/maps/api/js?key=${API_KEY}&v=weekly&libraries=marker,places,geocoding,geometry`;
     script.async = true;
     script.crossOrigin = "anonymous";
     script.onload = () => {
-      resolve(null);
+      resolve();
       script.remove(); // Clean up immediately
     };
     script.onerror = () => {
       console.error("Failed to load Google Maps script");
+      resolve(); // Still resolve to allow fallback
     };
     document.head.appendChild(script);
   });
@@ -131,6 +139,15 @@ export function MapView({
       console.error("Map container not found");
       return;
     }
+
+    // Check if Google Maps API is available (may not be if key is missing)
+    if (!window.google?.maps?.Map) {
+      console.warn("[Map] Google Maps not available, showing placeholder");
+      mapContainer.current.innerHTML =
+        '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: #f0f0f0; color: #999;">Map not available (API not configured)</div>';
+      return;
+    }
+
     map.current = new window.google.maps.Map(mapContainer.current, {
       zoom: initialZoom,
       center: initialCenter,

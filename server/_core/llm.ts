@@ -216,7 +216,7 @@ const resolveApiUrl = () =>
 
 const assertApiKey = () => {
   if (!ENV.forgeApiKey) {
-    throw new Error("OPENAI_API_KEY is not configured");
+    console.warn("[LLM] Forge API key not configured, LLM features will be unavailable");
   }
 };
 

@@ -34,11 +34,14 @@ export type GenerateImageResponse = {
 export async function generateImage(
   options: GenerateImageOptions
 ): Promise<GenerateImageResponse> {
-  if (!ENV.forgeApiUrl) {
-    throw new Error("BUILT_IN_FORGE_API_URL is not configured");
-  }
-  if (!ENV.forgeApiKey) {
-    throw new Error("BUILT_IN_FORGE_API_KEY is not configured");
+  if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
+    // Fallback: return placeholder image when forge API is not configured
+    console.warn(
+      "[ImageGeneration] Forge API not configured, returning placeholder"
+    );
+    return {
+      url: "/placeholder-image.png",
+    };
   }
 
   // Build the full URL by appending the service path to the base URL
