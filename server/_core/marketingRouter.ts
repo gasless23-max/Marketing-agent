@@ -18,6 +18,15 @@ import {
 import { eq, and } from "drizzle-orm";
 import { protectedProcedure, router } from "./trpc";
 import { getDb } from "../db";
+import {
+  generateMarketingContent,
+  generateContentVariants,
+  analyzeTrendsWithGrok,
+  generateCampaignNarrative,
+  predictEngagementWithGrok,
+  generateCaption,
+  type GrokTask,
+} from "./grokIntegration";
 
 // Campaign Router
 export const campaignRouter = router({
@@ -752,6 +761,145 @@ export const agentMetricsRouter = router({
     }),
 });
 
+// Grok AI Router - AI-powered marketing features
+export const grokRouter = router({
+  // Generate content using Grok
+  generateContent: protectedProcedure
+    .input(
+      z.object({
+        task: z.enum([
+          "content_generation",
+          "trend_analysis",
+          "audience_insight",
+          "creative_optimization",
+          "engagement_prediction",
+          "virality_scoring",
+          "narrative_generation",
+          "caption_writing",
+          "hashtag_generation",
+          "sentiment_analysis",
+        ]) as z.ZodType<GrokTask>,
+        prompt: z.string().min(1),
+        context: z.record(z.unknown()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const content = await generateMarketingContent(
+        input.task,
+        input.prompt,
+        input.context
+      );
+      return { content };
+    }),
+
+  // Generate multiple content variants
+  generateVariants: protectedProcedure
+    .input(
+      z.object({
+        task: z.enum([
+          "content_generation",
+          "caption_writing",
+          "narrative_generation",
+        ]) as z.ZodType<GrokTask>,
+        basePrompt: z.string().min(1),
+        variantCount: z.number().default(3).min(1).max(10),
+        context: z.record(z.unknown()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const variants = await generateContentVariants(
+        input.task,
+        input.basePrompt,
+        input.variantCount,
+        input.context
+      );
+      return { variants };
+    }),
+
+  // Analyze trends with Grok
+  analyzeTrends: protectedProcedure
+    .input(
+      z.object({
+        trends: z.array(
+          z.object({
+            name: z.string(),
+            momentum: z.number(),
+            sentiment: z.string(),
+            volume: z.number(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const analysis = await analyzeTrendsWithGrok(input.trends);
+      return analysis;
+    }),
+
+  // Generate campaign narrative
+  generateNarrative: protectedProcedure
+    .input(
+      z.object({
+        campaignName: z.string().min(1),
+        targetAudience: z.string().min(1),
+        productOrService: z.string().min(1),
+        tone: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const narrative = await generateCampaignNarrative(
+        input.campaignName,
+        input.targetAudience,
+        input.productOrService,
+        input.tone
+      );
+      return narrative;
+    }),
+
+  // Predict engagement with Grok
+  predictEngagement: protectedProcedure
+    .input(
+      z.object({
+        contentDescription: z.string().min(1),
+        platform: z.string().min(1),
+        targetAudience: z.string().min(1),
+        recentTrends: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const prediction = await predictEngagementWithGrok(
+        input.contentDescription,
+        input.platform,
+        input.targetAudience,
+        input.recentTrends
+      );
+      return prediction;
+    }),
+
+  // Generate caption with hashtags
+  generateCaption: protectedProcedure
+    .input(
+      z.object({
+        contentType: z.string().min(1),
+        contentDescription: z.string().min(1),
+        platform: z.string().min(1),
+        tone: z.string().min(1),
+        includeHashtags: z.boolean().default(true),
+        mentions: z.array(z.string()).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const caption = await generateCaption(
+        input.contentType,
+        input.contentDescription,
+        input.platform,
+        input.tone,
+        input.includeHashtags,
+        input.mentions
+      );
+      return caption;
+    }),
+});
+
 // Marketing Router - Main Entry Point
 export const marketingRouter = router({
   campaigns: campaignRouter,
@@ -762,4 +910,5 @@ export const marketingRouter = router({
   predictions: predictionsRouter,
   channels: channelRouter,
   metrics: agentMetricsRouter,
+  ai: grokRouter,
 });
