@@ -12,6 +12,7 @@ export default function Navigation() {
     { label: 'Off-Chain', href: '/off-chain' },
     { label: 'Creative Studio', href: '/adobe-creative' },
     { label: 'Analytics', href: '/analytics' },
+    { label: 'Realtime', href: '/realtime-dashboard' },
     { label: 'Campaigns', href: '/campaigns' },
     { label: 'Viral Prediction', href: '/viral-prediction' },
     { label: 'Growth Analytics', href: '/growth-analytics' },

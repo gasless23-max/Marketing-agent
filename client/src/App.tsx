@@ -14,21 +14,24 @@ import Campaigns from "./pages/Campaigns";
 import ViralPrediction from "./pages/ViralPrediction";
 import CreativeStudio from "./pages/CreativeStudio";
 import GrowthAnalytics from "./pages/GrowthAnalytics";
+import RealtimeDashboard from "./pages/RealtimeDashboard";
 
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/agents" component={Agents} />
-      <Route path="/on-chain" component={OnChainMarketing} />
-      <Route path="/off-chain" component={OffChainMarketing} />
-      <Route path="/adobe-creative" component={AdobeCreative} />
-      <Route path="/analytics" component={Analytics} />
-      <Route path="/campaigns" component={Campaigns} />
-      <Route path="/viral-prediction" component={ViralPrediction} />
-      <Route path="/creative-studio" component={CreativeStudio} />
-      <Route path="/growth-analytics" component={GrowthAnalytics} />
-      <Route path="/404" component={NotFound} />
+      <Route path={"/"} component={Home} />
+      <Route path={"/agents"} component={Agents} />
+      <Route path={"/on-chain"} component={OnChainMarketing} />
+      <Route path={"/off-chain"} component={OffChainMarketing} />
+      <Route path={"/adobe-creative"} component={AdobeCreative} />
+      <Route path={"/analytics"} component={Analytics} />
+      <Route path={"/realtime-dashboard"} component={RealtimeDashboard} />
+      <Route path={"/campaigns"} component={Campaigns} />
+      <Route path={"/viral-prediction"} component={ViralPrediction} />
+      <Route path={"/creative-studio"} component={CreativeStudio} />
+      <Route path={"/growth-analytics"} component={GrowthAnalytics} />
+      <Route path={"/404"} component={NotFound} />
+      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
@@ -37,7 +40,9 @@ function Router() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider
+        defaultTheme="dark"
+      >
         <TooltipProvider>
           <Toaster />
           <Router />

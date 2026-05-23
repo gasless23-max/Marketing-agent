@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, json, decimal, boolean, index } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -25,6 +25,7 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+<<<<<<< Updated upstream
 // Marketing Agent Tables
 export const campaigns = mysqlTable("campaigns", {
   id: int("id").autoincrement().primaryKey(),
@@ -436,11 +437,71 @@ export const webhooks = mysqlTable("webhooks", {
   headers: text("headers"), // JSON custom headers
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+=======
+// Campaigns table
+export const campaigns = mysqlTable("campaigns", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  status: mysqlEnum("status", ["draft", "scheduled", "active", "paused", "completed", "failed"]).default("draft").notNull(),
+  platforms: json("platforms").$type<string[]>().notNull(),
+  targetAudience: json("targetAudience").notNull(),
+  budget: decimal("budget", { precision: 12, scale: 2 }).notNull(),
+  content: json("content").notNull(),
+  engagementScore: decimal("engagementScore", { precision: 5, scale: 2 }),
+  conversionRate: decimal("conversionRate", { precision: 5, scale: 2 }),
+  impressions: int("impressions").default(0),
+  clicks: int("clicks").default(0),
+  conversions: int("conversions").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  launchedAt: timestamp("launchedAt"),
+  completedAt: timestamp("completedAt"),
+});
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type InsertCampaign = typeof campaigns.$inferInsert;
+
+// Autonomous Tasks table
+export const autonomousTasks = mysqlTable("autonomousTasks", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  name: text("name").notNull(),
+  type: mysqlEnum("type", ["campaign_launch", "content_generation", "optimization", "monitoring", "analysis"]).notNull(),
+  status: mysqlEnum("status", ["pending", "running", "completed", "failed"]).default("pending").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium").notNull(),
+  config: json("config").notNull(),
+  result: json("result"),
+  error: text("error"),
+  progress: int("progress").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+});
+
+export type AutonomousTask = typeof autonomousTasks.$inferSelect;
+export type InsertAutonomousTask = typeof autonomousTasks.$inferInsert;
+
+// Webhooks table
+export const webhooks = mysqlTable("webhooks", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  events: json("events").$type<string[]>().notNull(),
+  secret: text("secret").notNull(),
+  active: boolean("active").default(true).notNull(),
+  failureCount: int("failureCount").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastTriggered: timestamp("lastTriggered"),
+>>>>>>> Stashed changes
 });
 
 export type Webhook = typeof webhooks.$inferSelect;
 export type InsertWebhook = typeof webhooks.$inferInsert;
 
+<<<<<<< Updated upstream
 export const apiExtensions = mysqlTable("apiExtensions", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -526,9 +587,71 @@ export const adBudgetOptimizations = mysqlTable("adBudgetOptimizations", {
   expectedRoi: int("expectedRoi").default(0), // expected return on investment percentage
   actualRoi: int("actualRoi").default(0),
   status: mysqlEnum("status", ["planning", "active", "optimizing", "completed"]).default("planning"),
+=======
+// Webhook Events table
+export const webhookEvents = mysqlTable("webhookEvents", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  webhookId: varchar("webhookId", { length: 64 }).notNull(),
+  event: text("event").notNull(),
+  payload: json("payload").notNull(),
+  status: mysqlEnum("status", ["pending", "success", "failed"]).default("pending").notNull(),
+  attempts: int("attempts").default(0),
+  nextRetry: timestamp("nextRetry"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WebhookEvent = typeof webhookEvents.$inferSelect;
+export type InsertWebhookEvent = typeof webhookEvents.$inferInsert;
+
+// Learning Models table
+export const learningModels = mysqlTable("learningModels", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  name: text("name").notNull(),
+  type: mysqlEnum("type", ["engagement_predictor", "trend_detector", "conversion_optimizer", "anomaly_detector"]).notNull(),
+  version: int("version").default(1).notNull(),
+  accuracy: decimal("accuracy", { precision: 5, scale: 4 }).notNull(),
+  trainingDataCount: int("trainingDataCount").default(0),
+  parameters: json("parameters").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastTrained: timestamp("lastTrained"),
+});
+
+export type LearningModel = typeof learningModels.$inferSelect;
+export type InsertLearningModel = typeof learningModels.$inferInsert;
+
+// Insights table
+export const insights = mysqlTable("insights", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["prediction", "recommendation", "anomaly", "opportunity"]).notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  confidence: decimal("confidence", { precision: 5, scale: 4 }).notNull(),
+  actionable: boolean("actionable").default(false),
+  data: json("data"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Insight = typeof insights.$inferSelect;
+export type InsertInsight = typeof insights.$inferInsert;
+
+// User Preferences table
+export const userPreferences = mysqlTable("userPreferences", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  theme: varchar("theme", { length: 20 }).default("dark"),
+  notifications: boolean("notifications").default(true),
+  emailAlerts: boolean("emailAlerts").default(true),
+  autoLaunchCampaigns: boolean("autoLaunchCampaigns").default(false),
+>>>>>>> Stashed changes
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
+<<<<<<< Updated upstream
 export type AdBudgetOptimization = typeof adBudgetOptimizations.$inferSelect;
 export type InsertAdBudgetOptimization = typeof adBudgetOptimizations.$inferInsert;
+=======
+export type UserPreference = typeof userPreferences.$inferSelect;
+export type InsertUserPreference = typeof userPreferences.$inferInsert;
+>>>>>>> Stashed changes
