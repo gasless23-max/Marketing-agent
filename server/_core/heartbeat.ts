@@ -43,10 +43,17 @@ export type HeartbeatJobInfo = {
 const SERVICE = "webdevtoken.v1.WebDevService";
 
 const buildEndpoint = (rpc: string): string => {
-  if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-    // Heartbeat service not configured, return a placeholder URL
-    // The callForge function will handle the error gracefully
-    return `http://localhost/disabled/${rpc}`;
+  if (!ENV.forgeApiUrl) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Heartbeat service URL is not configured (BUILT_IN_FORGE_API_URL).",
+    });
+  }
+  if (!ENV.forgeApiKey) {
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Heartbeat service API key is not configured (BUILT_IN_FORGE_API_KEY).",
+    });
   }
   const baseUrl = ENV.forgeApiUrl;
   const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -58,14 +65,6 @@ const callForge = async <T>(
   body: Record<string, unknown>,
   userSession: string
 ): Promise<T> => {
-  if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-    // Heartbeat service not configured
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: `Heartbeat service is not configured. ${rpc} is not available.`,
-    });
-  }
-
   const endpoint = buildEndpoint(rpc);
   const headers: Record<string, string> = {
     accept: "application/json",
